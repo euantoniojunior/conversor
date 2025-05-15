@@ -6,7 +6,6 @@
   <title>Conversor de Arquivos</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
-    /* Estilo para a barra de progresso */
     .progress-container {
       display: none;
       width: 100%;
@@ -34,27 +33,14 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-
-    /* Estilo para o logo do SENAC */
-    .logo-senac {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      max-width: 120px;
-      height: auto;
-    }
-
-    .header {
-      position: relative;
-    }
   </style>
 </head>
 <body>
   <div class="container">
     <header class="header">
+      <img src="{{ url_for('static', filename='logo-senac.png') }}" alt="Logo Senac" class="logo-senac">
       <h1>Conversor de Arquivos</h1>
       <p>Transforme seus arquivos rapidamente!</p>
-      <img src="{{ url_for('static', filename='logo-senac.png') }}" alt="Logo Senac" class="logo-senac">
     </header>
 
     <main class="main-content">
@@ -96,7 +82,6 @@
 
     document.getElementById('conversion-form').addEventListener('submit', function (event) {
       event.preventDefault();
-
       document.getElementById('progress-container').style.display = 'block';
       document.getElementById('loading-spinner').style.display = 'block';
 
@@ -122,7 +107,6 @@
           a.download = 'converted_file';
           a.click();
           window.URL.revokeObjectURL(url);
-
           document.getElementById('progress-container').style.display = 'none';
           document.getElementById('loading-spinner').style.display = 'none';
           updateProgressBar(0);
