@@ -8,7 +8,7 @@
   <style>
     /* Estilo para a barra de progresso */
     .progress-container {
-      display: none; /* Inicialmente oculto */
+      display: none;
       width: 100%;
       margin-top: 20px;
     }
@@ -20,9 +20,8 @@
       line-height: 20px;
       color: white;
     }
-    /* Estilo para a animação de carregamento */
     .loading-spinner {
-      display: none; /* Inicialmente oculto */
+      display: none;
       border: 4px solid #f3f3f3;
       border-top: 4px solid #3498db;
       border-radius: 50%;
@@ -35,6 +34,19 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
+
+    /* Estilo para o logo do SENAC */
+    .logo-senac {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      max-width: 120px;
+      height: auto;
+    }
+
+    .header {
+      position: relative;
+    }
   </style>
 </head>
 <body>
@@ -42,6 +54,7 @@
     <header class="header">
       <h1>Conversor de Arquivos</h1>
       <p>Transforme seus arquivos rapidamente!</p>
+      <img src="{{ url_for('static', filename='logo-senac.png') }}" alt="Logo Senac" class="logo-senac">
     </header>
 
     <main class="main-content">
@@ -57,18 +70,15 @@
         <label for="files" class="label">Escolha os arquivos:</label>
         <input type="file" id="files" name="files" multiple class="file-input" required>
 
-        <!-- Novo nome do botão -->
         <button type="submit" class="submit-btn" id="generate-btn">
           <span class="btn-icon">📄</span> Gerar novo Arquivo
         </button>
       </form>
 
-      <!-- Barra de progresso -->
       <div class="progress-container" id="progress-container">
         <div class="progress-bar" id="progress-bar">0%</div>
       </div>
 
-      <!-- Animação de carregamento -->
       <div class="loading-spinner" id="loading-spinner"></div>
     </main>
 
@@ -78,22 +88,18 @@
   </div>
 
   <script>
-    // Função para atualizar a barra de progresso
     function updateProgressBar(progress) {
       const progressBar = document.getElementById('progress-bar');
       progressBar.style.width = progress + '%';
       progressBar.textContent = progress + '%';
     }
 
-    // Função para mostrar/ocultar a barra de progresso e animação
     document.getElementById('conversion-form').addEventListener('submit', function (event) {
-      event.preventDefault(); // Impede o envio imediato do formulário
+      event.preventDefault();
 
-      // Mostrar a barra de progresso e animação
       document.getElementById('progress-container').style.display = 'block';
       document.getElementById('loading-spinner').style.display = 'block';
 
-      // Simular progresso (opcional, se quiser testar sem backend)
       let progress = 0;
       const interval = setInterval(() => {
         progress += 10;
@@ -103,26 +109,23 @@
         }
       }, 500);
 
-      // Enviar o formulário via JavaScript
       const formData = new FormData(this);
       fetch('/', {
         method: 'POST',
         body: formData,
       })
-        .then(response => response.blob()) // Receber o arquivo convertido
+        .then(response => response.blob())
         .then(blob => {
-          // Criar um link para download do arquivo
           const url = window.URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = 'converted_file'; // Nome padrão do arquivo
+          a.download = 'converted_file';
           a.click();
           window.URL.revokeObjectURL(url);
 
-          // Ocultar a barra de progresso e animação após conclusão
           document.getElementById('progress-container').style.display = 'none';
           document.getElementById('loading-spinner').style.display = 'none';
-          updateProgressBar(0); // Reiniciar a barra de progresso
+          updateProgressBar(0);
         })
         .catch(error => {
           console.error('Erro durante a conversão:', error);
