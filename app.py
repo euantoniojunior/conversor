@@ -1,25 +1,24 @@
-from flask import Flask, render_template, request, send_file, after_this_request
+from flask import Flask, render_template, request, send_file
 import os
 from werkzeug.utils import secure_filename
 from pdf2docx import Converter
 from PIL import Image
 import img2pdf
 from PyPDF2 import PdfMerger, PdfReader, PdfWriter
+import mimetypes
 
 # Inicializar o Flask
 app = Flask(__name__)
 
-# Configurações com variáveis de ambiente
-UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER', 'uploads')
+# Configurações usando variáveis de ambiente
+UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER', 'uploads')  # Pasta padrão: 'uploads'
 ALLOWED_EXTENSIONS = {'pdf', 'jpg', 'jpeg', 'png'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 30 * 1024 * 1024  # Limite: 30 MB
 
-# Criar pasta de uploads se necessário
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
+# Criar pasta de uploads se não existir
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Verificação de extensão permitida
+# Verifica se o arquivo tem uma extensão permitida
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -41,60 +40,48 @@ def index():
                 file.save(file_path)
                 file_paths.append(file_path)
 
-        # Processar operação solicitada
-        if operation == 'jpeg-to-pdf':
-            output_path = jpeg_to_pdf(file_paths)
-        elif operation == 'pdf-to-word':
-            output_path = pdf_to_word(file_paths[0])
-            if not output_path:
-                return "Erro ao converter PDF para Word. Verifique o arquivo."
-        elif operation == 'merge-pdfs':
-            output_path = merge_pdfs(file_paths)
-        elif operation == 'compress-file':
-            output_path = compress_file(file_paths[0])
-            if not output_path:
-                return "Erro: Tipo de arquivo não suportado para compressão."
-        else:
-            return "Erro: Operação não suportada."
+        if not file_paths:
+            return "Erro: Nenhum arquivo válido foi enviado."
 
-        @after_this_request
-        def cleanup(response):
-            try:
-                # Excluir arquivos de entrada e saída
-                for path in file_paths:
-                    if os.path.exists(path):
-                        os.remove(path)
-                if os.path.exists(output_path):
-                    os.remove(output_path)
-            except Exception as e:
-                print(f"Erro ao excluir arquivos temporários: {e}")
-            return response
+        try:
+            if operation == 'jpeg-to-pdf':
+                output_path = jpeg_to_pdf(file_paths)
+            elif operation == 'pdf-to-word':
+                output_path = pdf_to_word(file_paths[0])
+            elif operation == 'merge-pdfs':
+                output_path = merge_pdfs(file_paths)
+            elif operation == 'compress-file':
+                output_path = compress_file(file_paths[0])
+            else:
+                return "Erro: Operação não suportada."
 
-        return send_file(output_path, as_attachment=True)
+            if not os.path.exists(output_path):
+                return "Erro: O arquivo de saída não foi gerado."
+
+            mimetype, _ = mimetypes.guess_type(output_path)
+            return send_file(output_path, as_attachment=True, mimetype=mimetype)
+
+        except Exception as e:
+            return f"Erro durante o processamento: {str(e)}"
 
     return render_template('index.html')
 
-# Conversão JPEG para PDF
+# Converter imagens JPEG/PNG para PDF
 def jpeg_to_pdf(image_paths):
     output_path = os.path.join(app.config['UPLOAD_FOLDER'], 'output.pdf')
     with open(output_path, "wb") as f:
-        f.write(img2pdf.convert([str(p) for p in image_paths]))
+        f.write(img2pdf.convert(image_paths))
     return output_path
 
-# Conversão PDF para Word com tratamento e limite de páginas
-def pdf_to_word(pdf_path, max_pages=20):
+# Converter PDF para Word (DOCX)
+def pdf_to_word(pdf_path):
     docx_path = os.path.splitext(pdf_path)[0] + '.docx'
-    try:
-        total_pages = len(PdfReader(pdf_path).pages)
-        end_page = min(max_pages, total_pages)
-        with Converter(pdf_path) as cv:
-            cv.convert(docx_path, start=0, end=end_page)
-        return docx_path
-    except Exception as e:
-        print(f"Erro na conversão PDF → Word: {e}")
-        return None
+    cv = Converter(pdf_path)
+    cv.convert(docx_path, start=0, end=None)
+    cv.close()
+    return docx_path
 
-# Mesclar múltiplos PDFs
+# Mesclar múltiplos arquivos PDF
 def merge_pdfs(pdf_paths):
     merger = PdfMerger()
     for pdf in pdf_paths:
@@ -104,7 +91,7 @@ def merge_pdfs(pdf_paths):
     merger.close()
     return output_path
 
-# Compressão de PDF ou imagem
+# Comprimir PDF ou imagem
 def compress_file(file_path):
     ext = os.path.splitext(file_path)[1].lower()
     compressed_path = os.path.join(app.config['UPLOAD_FOLDER'], 'compressed_' + os.path.basename(file_path))
@@ -117,19 +104,17 @@ def compress_file(file_path):
             writer.add_page(page)
         with open(compressed_path, 'wb') as f:
             writer.write(f)
+
     elif ext in ['.jpg', '.jpeg', '.png']:
-        try:
-            img = Image.open(file_path)
-            img.save(compressed_path, optimize=True, quality=40)
-        except Exception as e:
-            print(f"Erro ao comprimir imagem: {e}")
-            return None
+        img = Image.open(file_path)
+        img.save(compressed_path, optimize=True, quality=40)
+
     else:
         return None
 
     return compressed_path
 
-# Executar o servidor
+# Iniciar servidor
 if __name__ == '__main__':
     debug_mode = os.getenv('DEBUG_MODE', 'False').lower() == 'true'
     app.run(debug=debug_mode)
