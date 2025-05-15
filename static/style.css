@@ -8,8 +8,8 @@
 /* Estilo global */
 body {
   font-family: 'Helvetica Neue', Arial, sans-serif;
-  background-color: #F5F5F5; /* Cinza claro */
-  color: #333333; /* Texto escuro */
+  background-color: #F5F5F5;
+  color: #333333;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -19,17 +19,24 @@ body {
 .container {
   width: 100%;
   max-width: 500px;
-  background: #FFFFFF; /* Branco */
+  background: #FFFFFF;
   padding: 2rem;
   border-radius: 10px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   text-align: center;
 }
 
+/* Logo SENAC */
+.logo-senac {
+  width: 150px;
+  height: auto;
+  margin-bottom: 1rem;
+}
+
 /* Header */
 .header h1 {
   font-size: 2rem;
-  color: #004C94; /* Azul SENAC */
+  color: #004C94;
   margin-bottom: 0.5rem;
 }
 
@@ -42,7 +49,7 @@ body {
 .label {
   font-size: 1rem;
   font-weight: bold;
-  color: #004C94; /* Azul SENAC */
+  color: #004C94;
   margin-bottom: 0.5rem;
   display: block;
 }
@@ -53,18 +60,18 @@ body {
   width: 100%;
   padding: 0.75rem;
   margin-bottom: 1rem;
-  border: 2px solid #004C94; /* Azul SENAC */
+  border: 2px solid #004C94;
   border-radius: 5px;
   font-size: 1rem;
-  color: #333333; /* Texto escuro */
+  color: #333333;
 }
 
 /* Botão de envio */
 .submit-btn {
   width: 100%;
   padding: 0.75rem;
-  background-color: #F7941D; /* Laranja SENAC */
-  color: #FFFFFF; /* Branco */
+  background-color: #F7941D;
+  color: #FFFFFF;
   font-size: 1rem;
   font-weight: bold;
   border: none;
@@ -74,11 +81,11 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 0.5rem; /* Espaçamento entre ícone e texto */
+  gap: 0.5rem;
 }
 
 .submit-btn:hover {
-  background-color: #FDC180; /* Laranja-claro SENAC */
+  background-color: #FDC180;
 }
 
 /* Ícone no botão */
@@ -90,5 +97,5 @@ body {
 .footer {
   margin-top: 2rem;
   font-size: 0.875rem;
-  color: #333333; /* Texto escuro */
+  color: #333333;
 }
