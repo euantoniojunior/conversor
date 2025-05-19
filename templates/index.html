@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Conversor de Arquivos</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
@@ -56,7 +56,12 @@
         <label for="files" class="label">Escolha os arquivos:</label>
         <input type="file" id="files" name="files" multiple class="file-input" accept=".pdf,.jpg,.jpeg,.png" required>
 
-        <!-- Lista de arquivos selecionados -->
+        <!-- Campo opcional para seleção de páginas -->
+        <div id="pages-field" style="display: none;">
+          <label for="pages" class="label">Páginas (ex: 0-5):</label>
+          <input type="text" id="pages" name="pages" class="file-input" placeholder="Deixe vazio para todas">
+        </div>
+
         <div id="file-list" class="file-list" aria-live="polite"></div>
 
         <button type="submit" class="submit-btn" id="generate-btn">
@@ -86,7 +91,7 @@
     // Mostra os nomes dos arquivos selecionados
     document.getElementById('files').addEventListener('change', function () {
       const fileList = document.getElementById('file-list');
-      fileList.innerHTML = ''; // Limpa lista anterior
+      fileList.innerHTML = '';
 
       if (this.files.length === 0) {
         fileList.textContent = 'Nenhum arquivo selecionado.';
@@ -107,11 +112,17 @@
       fileList.appendChild(ul);
     });
 
+    // Mostrar campo de páginas apenas para PDF -> Word
+    document.getElementById('operation').addEventListener('change', function () {
+      const pagesField = document.getElementById('pages-field');
+      pagesField.style.display = this.value === 'pdf-to-word' ? 'block' : 'none';
+    });
+
     // Lógica do formulário
     document.getElementById('conversion-form').addEventListener('submit', function (event) {
       event.preventDefault();
       document.getElementById('progress-container').style.display = 'block';
-      document.getElementById('loading-spinner').style.display = 'block';
+      document.getElementById('loading-spinner').style.display = 'none'; // Oculta spinner por enquanto
 
       let progress = 0;
       const interval = setInterval(() => {
@@ -127,23 +138,24 @@
         method: 'POST',
         body: formData,
       })
-        .then(response => response.blob())
+        .then(response => {
+          if (!response.ok) throw new Error("Erro na resposta do servidor");
+          return response.blob();
+        })
         .then(blob => {
           const url = window.URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = 'arquivos_mesclados.pdf';
+          a.download = 'converted_file.docx';
           a.click();
           window.URL.revokeObjectURL(url);
           document.getElementById('progress-container').style.display = 'none';
-          document.getElementById('loading-spinner').style.display = 'none';
           updateProgressBar(0);
         })
         .catch(error => {
           console.error('Erro durante a conversão:', error);
-          alert('Ocorreu um erro durante a conversão.');
+          alert('Ocorreu um erro durante a conversão. Verifique o arquivo ou tente outro.');
           document.getElementById('progress-container').style.display = 'none';
-          document.getElementById('loading-spinner').style.display = 'none';
         });
     });
   </script>
