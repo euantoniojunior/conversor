@@ -13,7 +13,8 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  min-height: 100vh;
+  padding: 1rem;
 }
 
 .container {
@@ -52,6 +53,7 @@ body {
   color: #004C94;
   margin-bottom: 0.5rem;
   display: block;
+  text-align: left;
 }
 
 /* Inputs e Select */
@@ -64,13 +66,38 @@ body {
   border-radius: 5px;
   font-size: 1rem;
   color: #333333;
+  background-color: #fff;
+  transition: border-color 0.3s ease;
+}
+
+.select:focus,
+.file-input:focus {
+  outline: none;
+  border-color: #F7941D;
+}
+
+/* Lista de arquivos */
+.file-list {
+  margin-top: 10px;
+  font-size: 0.9rem;
+  color: #555;
+  text-align: left;
+}
+
+.file-list ul {
+  padding-left: 0;
+}
+
+.file-list li {
+  list-style-type: none;
+  margin: 4px 0;
 }
 
 /* Botão de envio */
 .submit-btn {
   width: 100%;
   padding: 0.75rem;
-  background-color: #F7941D;
+  background-color: #004C94;
   color: #FFFFFF;
   font-size: 1rem;
   font-weight: bold;
@@ -85,7 +112,7 @@ body {
 }
 
 .submit-btn:hover {
-  background-color: #FDC180;
+  background-color: #0066B2;
 }
 
 /* Ícone no botão */
@@ -97,5 +124,5 @@ body {
 .footer {
   margin-top: 2rem;
   font-size: 0.875rem;
-  color: #333333;
+  color: #666;
 }
