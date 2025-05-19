@@ -2,27 +2,19 @@ from flask import Flask, render_template, request, send_file
 import os
 from werkzeug.utils import secure_filename
 from pdf2docx import Converter
-from PIL import Image
-import img2pdf
-from PyPDF2 import PdfMerger, PdfReader, PdfWriter
-import mimetypes
+from PyPDF2 import PdfReader
 
-# Inicializar o Flask
 app = Flask(__name__)
+UPLOAD_FOLDER = 'uploads'
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
+MAX_PAGES = 10
 
-# Configurações usando variáveis de ambiente
-UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER', 'uploads')  # Pasta padrão: 'uploads'
-ALLOWED_EXTENSIONS = {'pdf', 'jpg', 'jpeg', 'png'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-# Criar pasta de uploads se não existir
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Verifica se o arquivo tem uma extensão permitida
 def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'pdf'}
 
-# Rota principal
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
@@ -44,10 +36,28 @@ def index():
             return "Erro: Nenhum arquivo válido foi enviado."
 
         try:
-            if operation == 'jpeg-to-pdf':
+            start_page = 0
+            end_page = None
+
+            if operation == 'pdf-to-word':
+                pages_input = request.form.get('pages')
+                if pages_input:
+                    try:
+                        start, end = map(int, pages_input.split('-'))
+                        start_page = start
+                        end_page = end
+                    except:
+                        return "Formato inválido para páginas. Use ex: 0-5"
+
+                reader = PdfReader(file_paths[0])
+                total_pages = len(reader.pages)
+                if total_pages > MAX_PAGES:
+                    return f"Limite de {MAX_PAGES} páginas excedido."
+
+                output_path = pdf_to_word(file_paths[0], start=start_page, end=end_page)
+
+            elif operation == 'jpeg-to-pdf':
                 output_path = jpeg_to_pdf(file_paths)
-            elif operation == 'pdf-to-word':
-                output_path = pdf_to_word(file_paths[0])
             elif operation == 'merge-pdfs':
                 output_path = merge_pdfs(file_paths)
             elif operation == 'compress-file':
@@ -58,7 +68,9 @@ def index():
             if not os.path.exists(output_path):
                 return "Erro: O arquivo de saída não foi gerado."
 
-            mimetype, _ = mimetypes.guess_type(output_path)
+            mimetype, _ = os.path.splitext(output_path)
+            mimetype = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' if mimetype == '.docx' else 'application/pdf'
+
             return send_file(output_path, as_attachment=True, mimetype=mimetype)
 
         except Exception as e:
@@ -68,21 +80,23 @@ def index():
 
 # Converter imagens JPEG/PNG para PDF
 def jpeg_to_pdf(image_paths):
+    from PIL import Image
     output_path = os.path.join(app.config['UPLOAD_FOLDER'], 'output.pdf')
-    with open(output_path, "wb") as f:
-        f.write(img2pdf.convert(image_paths))
+    images = [Image.open(img).convert('RGB') for img in image_paths]
+    images[0].save(output_path, save_all=True, append_images=images[1:])
     return output_path
 
 # Converter PDF para Word (DOCX)
-def pdf_to_word(pdf_path):
+def pdf_to_word(pdf_path, start=0, end=None):
     docx_path = os.path.splitext(pdf_path)[0] + '.docx'
     cv = Converter(pdf_path)
-    cv.convert(docx_path, start=0, end=None)
+    cv.convert(docx_path, start=start, end=end)
     cv.close()
     return docx_path
 
 # Mesclar múltiplos arquivos PDF
 def merge_pdfs(pdf_paths):
+    from PyPDF2 import PdfMerger
     merger = PdfMerger()
     for pdf in pdf_paths:
         merger.append(pdf)
@@ -93,6 +107,9 @@ def merge_pdfs(pdf_paths):
 
 # Comprimir PDF ou imagem
 def compress_file(file_path):
+    from PIL import Image
+    from PyPDF2 import PdfReader, PdfWriter
+
     ext = os.path.splitext(file_path)[1].lower()
     compressed_path = os.path.join(app.config['UPLOAD_FOLDER'], 'compressed_' + os.path.basename(file_path))
 
@@ -114,7 +131,5 @@ def compress_file(file_path):
 
     return compressed_path
 
-# Iniciar servidor
 if __name__ == '__main__':
-    debug_mode = os.getenv('DEBUG_MODE', 'False').lower() == 'true'
-    app.run(debug=debug_mode)
+    app.run(debug=False)
