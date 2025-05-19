@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Conversor de Arquivos</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
@@ -33,6 +33,16 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
+
+    .error-message {
+      color: #D8000C;
+      background-color: #FFBABA;
+      padding: 6px;
+      margin-top: 4px;
+      font-size: 0.9rem;
+      border-radius: 4px;
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -55,11 +65,13 @@
 
         <label for="files" class="label">Escolha os arquivos:</label>
         <input type="file" id="files" name="files" multiple class="file-input" accept=".pdf,.jpg,.jpeg,.png" required>
+        <div id="error-files" class="error-message"></div>
 
         <!-- Campo opcional para seleção de páginas -->
         <div id="pages-field" style="display: none;">
           <label for="pages" class="label">Páginas (ex: 0-5):</label>
           <input type="text" id="pages" name="pages" class="file-input" placeholder="Deixe vazio para todas">
+          <div id="error-pages" class="error-message"></div>
         </div>
 
         <div id="file-list" class="file-list" aria-live="polite"></div>
@@ -82,10 +94,25 @@
   </div>
 
   <script>
+    const MAX_PAGES = 10;
+
     function updateProgressBar(progress) {
       const progressBar = document.getElementById('progress-bar');
       progressBar.style.width = progress + '%';
       progressBar.textContent = progress + '%';
+    }
+
+    function showError(fieldId, message) {
+      const errorDiv = document.getElementById(fieldId);
+      errorDiv.textContent = message;
+      errorDiv.style.display = 'block';
+    }
+
+    function clearErrors() {
+      document.querySelectorAll('.error-message').forEach(el => {
+        el.textContent = '';
+        el.style.display = 'none';
+      });
     }
 
     // Mostra os nomes dos arquivos selecionados
@@ -121,16 +148,16 @@
     // Lógica do formulário
     document.getElementById('conversion-form').addEventListener('submit', function (event) {
       event.preventDefault();
+      clearErrors(); // Limpa erros anteriores
+
       document.getElementById('progress-container').style.display = 'block';
-      document.getElementById('loading-spinner').style.display = 'none'; // Oculta spinner por enquanto
+      document.getElementById('loading-spinner').style.display = 'block';
 
       let progress = 0;
       const interval = setInterval(() => {
         progress += 10;
         updateProgressBar(progress);
-        if (progress >= 100) {
-          clearInterval(interval);
-        }
+        if (progress >= 100) clearInterval(interval);
       }, 500);
 
       const formData = new FormData(this);
@@ -138,25 +165,40 @@
         method: 'POST',
         body: formData,
       })
-        .then(response => {
-          if (!response.ok) throw new Error("Erro na resposta do servidor");
-          return response.blob();
-        })
-        .then(blob => {
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'converted_file.docx';
-          a.click();
-          window.URL.revokeObjectURL(url);
-          document.getElementById('progress-container').style.display = 'none';
-          updateProgressBar(0);
-        })
-        .catch(error => {
-          console.error('Erro durante a conversão:', error);
+      .then(response => {
+        if (!response.ok) return response.text().then(text => { throw new Error(text); });
+        return response.blob();
+      })
+      .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'converted_file.docx';
+        a.click();
+        window.URL.revokeObjectURL(url);
+      })
+      .catch(error => {
+        console.error('Erro durante a conversão:', error.message);
+
+        const errorMessage = error.message.toLowerCase();
+
+        if (errorMessage.includes('arquivo muito grande')) {
+          showError('error-files', 'O arquivo PDF é muito grande. Tamanho máximo permitido: 5MB.');
+        } else if (errorMessage.includes('limite de páginas excedido')) {
+          showError('error-pages', `O PDF tem mais de ${MAX_PAGES} páginas. Máximo permitido.`);
+        } else if (errorMessage.includes('formato inválido para páginas')) {
+          showError('error-pages', 'Formato inválido. Use ex: "0-5" para selecionar páginas.');
+        } else if (errorMessage.includes('nenhum arquivo válido foi enviado')) {
+          showError('error-files', 'Nenhum arquivo válido foi carregado.');
+        } else {
           alert('Ocorreu um erro durante a conversão. Verifique o arquivo ou tente outro.');
-          document.getElementById('progress-container').style.display = 'none';
-        });
+        }
+      })
+      .finally(() => {
+        document.getElementById('progress-container').style.display = 'none';
+        document.getElementById('loading-spinner').style.display = 'none';
+        updateProgressBar(0);
+      });
     });
   </script>
 </body>
