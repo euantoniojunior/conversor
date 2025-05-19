@@ -1,123 +1,71 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Conversor de Arquivos</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <style>
-    .progress-container {
-      display: none;
-      width: 100%;
-      margin-top: 20px;
-    }
-    .progress-bar {
-      width: 0%;
-      height: 20px;
-      background-color: #4caf50;
-      text-align: center;
-      line-height: 20px;
-      color: white;
-    }
-    .loading-spinner {
-      display: none;
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #3498db;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
-      margin: 20px auto;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <header class="header">
-  <img src="{{ url_for('static', filename='senac-logo.png') }}" alt="Logo Senac" class="logo-senac">
-  <h1>Conversor de Arquivos</h1>
-  <p>Transforme seus arquivos rapidamente!</p>
-</header>
+<script>
+  function updateProgressBar(progress) {
+    const progressBar = document.getElementById('progress-bar');
+    progressBar.style.width = progress + '%';
+    progressBar.textContent = progress + '%';
+  }
 
-    <main class="main-content">
-      <form id="conversion-form" action="/" method="post" enctype="multipart/form-data" class="form">
-        <label for="operation" class="label">Selecione a operação:</label>
-        <select id="operation" name="operation" class="select" required>
-          <option value="jpeg-to-pdf">JPEG para PDF</option>
-          <option value="pdf-to-word">PDF para Word</option>
-          <option value="merge-pdfs">Unir PDFs</option>
-          <option value="compress-file">Comprimir Arquivo</option>
-        </select>
+  // Mostra os nomes dos arquivos selecionados
+  document.getElementById('files').addEventListener('change', function () {
+    const fileList = document.getElementById('file-list');
+    fileList.innerHTML = ''; // Limpa lista anterior
 
-        <label for="files" class="label">Escolha os arquivos:</label>
-        <input type="file" id="files" name="files" multiple class="file-input" required>
-
-        <button type="submit" class="submit-btn" id="generate-btn">
-          <span class="btn-icon">📄</span> Gerar novo Arquivo
-        </button>
-      </form>
-
-      <div class="progress-container" id="progress-container">
-        <div class="progress-bar" id="progress-bar">0%</div>
-      </div>
-
-      <div class="loading-spinner" id="loading-spinner"></div>
-    </main>
-
-    <footer class="footer">
-      <p>&copy; 2025 Conversor de Arquivos</p>
-    </footer>
-  </div>
-
-  <script>
-    function updateProgressBar(progress) {
-      const progressBar = document.getElementById('progress-bar');
-      progressBar.style.width = progress + '%';
-      progressBar.textContent = progress + '%';
+    if (this.files.length === 0) {
+      fileList.textContent = 'Nenhum arquivo selecionado.';
+      return;
     }
 
-    document.getElementById('conversion-form').addEventListener('submit', function (event) {
-      event.preventDefault();
-      document.getElementById('progress-container').style.display = 'block';
-      document.getElementById('loading-spinner').style.display = 'block';
+    const ul = document.createElement('ul');
+    ul.style.listStyleType = 'none';
+    ul.style.paddingLeft = '0';
 
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += 10;
-        updateProgressBar(progress);
-        if (progress >= 100) {
-          clearInterval(interval);
-        }
-      }, 500);
-
-      const formData = new FormData(this);
-      fetch('/', {
-        method: 'POST',
-        body: formData,
-      })
-        .then(response => response.blob())
-        .then(blob => {
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'converted_file';
-          a.click();
-          window.URL.revokeObjectURL(url);
-          document.getElementById('progress-container').style.display = 'none';
-          document.getElementById('loading-spinner').style.display = 'none';
-          updateProgressBar(0);
-        })
-        .catch(error => {
-          console.error('Erro durante a conversão:', error);
-          alert('Ocorreu um erro durante a conversão.');
-          document.getElementById('progress-container').style.display = 'none';
-          document.getElementById('loading-spinner').style.display = 'none';
-        });
+    Array.from(this.files).forEach(file => {
+      const li = document.createElement('li');
+      li.textContent = `📄 ${file.name}`;
+      li.style.margin = '4px 0';
+      ul.appendChild(li);
     });
-  </script>
-</body>
-</html>
+
+    fileList.appendChild(ul);
+  });
+
+  // Lógica do formulário
+  document.getElementById('conversion-form').addEventListener('submit', function (event) {
+    event.preventDefault();
+    document.getElementById('progress-container').style.display = 'block';
+    document.getElementById('loading-spinner').style.display = 'block';
+
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += 10;
+      updateProgressBar(progress);
+      if (progress >= 100) {
+        clearInterval(interval);
+      }
+    }, 500);
+
+    const formData = new FormData(this);
+    fetch('/', {
+      method: 'POST',
+      body: formData,
+    })
+      .then(response => response.blob())
+      .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'arquivos_mesclados.pdf';
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.getElementById('progress-container').style.display = 'none';
+        document.getElementById('loading-spinner').style.display = 'none';
+        updateProgressBar(0);
+      })
+      .catch(error => {
+        console.error('Erro durante a conversão:', error);
+        alert('Ocorreu um erro durante a conversão.');
+        document.getElementById('progress-container').style.display = 'none';
+        document.getElementById('loading-spinner').style.display = 'none';
+      });
+  });
+</script>
