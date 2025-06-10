@@ -33,7 +33,6 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-
     .error-message {
       color: #D8000C;
       background-color: #FFBABA;
@@ -52,7 +51,6 @@
       <h1>Conversor de Arquivos</h1>
       <p>Transforme seus arquivos rapidamente!</p>
     </header>
-
     <main class="main-content">
       <form id="conversion-form" action="/" method="post" enctype="multipart/form-data" class="form">
         <label for="operation" class="label">Selecione a operação:</label>
@@ -62,32 +60,25 @@
           <option value="merge-pdfs">Unir PDFs</option>
           <option value="compress-file">Comprimir Arquivo</option>
         </select>
-
         <label for="files" class="label">Escolha os arquivos:</label>
         <input type="file" id="files" name="files" multiple class="file-input" accept=".pdf,.jpg,.jpeg,.png" required>
         <div id="error-files" class="error-message"></div>
-
         <!-- Campo opcional para seleção de páginas -->
         <div id="pages-field" style="display: none;">
           <label for="pages" class="label">Páginas (ex: 0-5):</label>
           <input type="text" id="pages" name="pages" class="file-input" placeholder="Deixe vazio para todas">
           <div id="error-pages" class="error-message"></div>
         </div>
-
         <div id="file-list" class="file-list" aria-live="polite"></div>
-
         <button type="submit" class="submit-btn" id="generate-btn">
           <span class="btn-icon">📄</span> Gerar novo Arquivo
         </button>
       </form>
-
       <div class="progress-container" id="progress-container">
         <div class="progress-bar" id="progress-bar">0%</div>
       </div>
-
       <div class="loading-spinner" id="loading-spinner"></div>
     </main>
-
     <footer class="footer">
       <p>&copy; 2025 Conversor de Arquivos</p>
     </footer>
@@ -119,23 +110,19 @@
     document.getElementById('files').addEventListener('change', function () {
       const fileList = document.getElementById('file-list');
       fileList.innerHTML = '';
-
       if (this.files.length === 0) {
         fileList.textContent = 'Nenhum arquivo selecionado.';
         return;
       }
-
       const ul = document.createElement('ul');
       ul.style.listStyleType = 'none';
       ul.style.paddingLeft = '0';
-
       Array.from(this.files).forEach(file => {
         const li = document.createElement('li');
         li.textContent = `📄 ${file.name}`;
         li.style.margin = '4px 0';
         ul.appendChild(li);
       });
-
       fileList.appendChild(ul);
     });
 
@@ -149,7 +136,6 @@
     document.getElementById('conversion-form').addEventListener('submit', function (event) {
       event.preventDefault();
       clearErrors(); // Limpa erros anteriores
-
       document.getElementById('progress-container').style.display = 'block';
       document.getElementById('loading-spinner').style.display = 'block';
 
@@ -158,7 +144,7 @@
         progress += 10;
         updateProgressBar(progress);
         if (progress >= 100) clearInterval(interval);
-      }, 500);
+      }, 300);
 
       const formData = new FormData(this);
       fetch('/', {
@@ -170,20 +156,30 @@
         return response.blob();
       })
       .then(blob => {
+        const firstFileName = document.getElementById('files').files[0]?.name || 'converted_file';
+        let filename = firstFileName.split('.').slice(0, -1).join('.') || 'converted_file';
+
+        const contentType = blob.type;
+        if (contentType === 'application/pdf') {
+            filename += '.pdf';
+        } else if (contentType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+            filename += '.docx';
+        } else {
+            filename += '.bin'; // caso padrão
+        }
+
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'converted_file.docx';
+        a.download = filename;
         a.click();
         window.URL.revokeObjectURL(url);
       })
       .catch(error => {
         console.error('Erro durante a conversão:', error.message);
-
         const errorMessage = error.message.toLowerCase();
-
         if (errorMessage.includes('arquivo muito grande')) {
-          showError('error-files', 'O arquivo PDF é muito grande. Tamanho máximo permitido: 5MB.');
+          showError('error-files', 'O arquivo é muito grande. Tamanho máximo permitido: 5MB.');
         } else if (errorMessage.includes('limite de páginas excedido')) {
           showError('error-pages', `O PDF tem mais de ${MAX_PAGES} páginas. Máximo permitido.`);
         } else if (errorMessage.includes('formato inválido para páginas')) {
