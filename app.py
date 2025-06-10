@@ -5,11 +5,9 @@ from pdf2docx import Converter
 from PyPDF2 import PdfReader, PdfMerger, PdfWriter
 
 app = Flask(__name__)
-
 UPLOAD_FOLDER = 'uploads'
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
 MAX_PAGES = 10
-
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
@@ -47,22 +45,23 @@ def index():
                         start, end = map(int, pages_input.split('-'))
                         start_page = start
                         end_page = end
-                    except:
+                    except ValueError:
                         return "Formato inválido para páginas. Use ex: 0-5", 400
-
                 reader = PdfReader(file_paths[0])
                 total_pages = len(reader.pages)
                 if total_pages > MAX_PAGES:
                     return f"Limite de {MAX_PAGES} páginas excedido.", 400
-
                 output_path = pdf_to_word(file_paths[0], start=start_page, end=end_page)
 
             elif operation == 'jpeg-to-pdf':
                 output_path = jpeg_to_pdf(file_paths)
+
             elif operation == 'merge-pdfs':
                 output_path = merge_pdfs(file_paths)
+
             elif operation == 'compress-file':
                 output_path = compress_file(file_paths[0])
+
             else:
                 return "Erro: Operação não suportada.", 400
 
@@ -108,7 +107,6 @@ def compress_file(file_path):
     from PIL import Image
     ext = os.path.splitext(file_path)[1].lower()
     compressed_path = os.path.join(app.config['UPLOAD_FOLDER'], 'compressed_' + os.path.basename(file_path))
-
     if ext == '.pdf':
         reader = PdfReader(file_path)
         writer = PdfWriter()
@@ -117,14 +115,11 @@ def compress_file(file_path):
             writer.add_page(page)
         with open(compressed_path, 'wb') as f:
             writer.write(f)
-
     elif ext in ['.jpg', '.jpeg', '.png']:
         img = Image.open(file_path)
         img.save(compressed_path, optimize=True, quality=40)
-
     else:
         return None
-
     return compressed_path
 
 if __name__ == '__main__':
