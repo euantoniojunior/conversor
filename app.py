@@ -1,7 +1,6 @@
 from flask import Flask, render_template, request, send_file
 import os
 import tempfile
-import shutil
 from werkzeug.utils import secure_filename
 from pdf2docx import Converter
 from PyPDF2 import PdfReader, PdfMerger, PdfWriter
@@ -84,6 +83,7 @@ def index():
 
     return render_template('index.html')
 
+
 # Função: JPEG/PNG ➜ PDF
 def jpeg_to_pdf(image_paths, output_dir=None):
     from PIL import Image
@@ -92,6 +92,7 @@ def jpeg_to_pdf(image_paths, output_dir=None):
     images[0].save(output_path, save_all=True, append_images=images[1:])
     return output_path
 
+
 # Função: PDF ➜ Word (.docx)
 def pdf_to_word(pdf_path, start=0, end=None, output_dir=None):
     docx_path = os.path.join(output_dir, os.path.splitext(os.path.basename(pdf_path))[0] + '.docx')
@@ -99,6 +100,7 @@ def pdf_to_word(pdf_path, start=0, end=None, output_dir=None):
     cv.convert(docx_path, start=start, end=end)
     cv.close()
     return docx_path
+
 
 # Função: Unir múltiplos PDFs
 def merge_pdfs(pdf_paths, output_dir=None):
@@ -109,6 +111,7 @@ def merge_pdfs(pdf_paths, output_dir=None):
     merger.write(output_path)
     merger.close()
     return output_path
+
 
 # Função: Comprimir PDF ou imagem
 def compress_file(file_path, output_dir=None):
@@ -129,6 +132,7 @@ def compress_file(file_path, output_dir=None):
     else:
         return None
     return compressed_path
+
 
 if __name__ == '__main__':
     app.run(debug=False)
