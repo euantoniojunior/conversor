@@ -62,6 +62,9 @@ def index():
                 elif operation == 'compress-file':
                     output_path = compress_file(file_paths[0], output_dir=tempdir)
 
+                elif operation == 'pdf-to-excel':
+                    output_path = pdf_to_excel(file_paths[0], output_dir=tempdir)
+
                 else:
                     return "Erro: Operação não suportada.", 400
 
@@ -132,6 +135,26 @@ def compress_file(file_path, output_dir=None):
     else:
         return None
     return compressed_path
+
+
+# Nova função: PDF ➜ Excel (.xlsx)
+def pdf_to_excel(pdf_path, output_dir=None):
+    import camelot
+    import pandas as pd
+
+    tables = camelot.read_pdf(pdf_path, pages='all')
+
+    if not tables:
+        raise ValueError("Nenhuma tabela encontrada no PDF.")
+
+    output_path = os.path.join(output_dir, 'output.xlsx')
+
+    with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
+        for i, table in enumerate(tables):
+            sheet_name = f'Table_{i+1}'
+            table.df.to_excel(writer, sheet_name=sheet_name[:31], index=False)  # Máximo 31 caracteres
+
+    return output_path
 
 
 if __name__ == '__main__':
