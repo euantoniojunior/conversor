@@ -6,3 +6,6 @@ Pillow
 PyPDF2
 docx2pdf
 gunicorn
+camelot-py[cv]
+openpyxl
+pandas
