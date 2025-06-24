@@ -59,6 +59,7 @@
           <option value="pdf-to-word">PDF para Word</option>
           <option value="merge-pdfs">Unir PDFs</option>
           <option value="compress-file">Comprimir Arquivo</option>
+          <option value="pdf-to-excel">PDF para Excel</option>
         </select>
         <label for="files" class="label">Escolha os arquivos:</label>
         <input type="file" id="files" name="files" multiple class="file-input" accept=".pdf,.jpg,.jpeg,.png" required>
@@ -164,6 +165,8 @@
             filename += '.pdf';
         } else if (contentType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
             filename += '.docx';
+        } else if (contentType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+            filename += '.xlsx';
         } else {
             filename += '.bin'; // caso padrão
         }
